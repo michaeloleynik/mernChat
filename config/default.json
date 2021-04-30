@@ -1,0 +1,6 @@
+{
+    "port": 5005,
+    "jwtSecret": "PkSpUrWuZw3y6B8DbGdJfNjQmSqVsXu2x4z7C9EbHeKgNkRnTqWtYv3y5A7DaFcHf",
+    "mongoURL": "mongodb+srv://admin:admin12345@cluster0.txqts.mongodb.net/app?retryWrites=true&w=majority",
+    "baseUrl": "http://localhost:5005"
+  }
