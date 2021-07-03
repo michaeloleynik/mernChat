@@ -69,6 +69,7 @@ router.post(
       }
 
       const {email, password, remember, lastSeen} = req.body;
+      // console.log(remember);
 
       const user = await User.findOne({ email });
 
@@ -82,10 +83,10 @@ router.post(
         return res.status(400).json({ message: "Password is not correct!", status: 400 });
       }
 
-      await user.updateOne({ lastSeen });
+      user.lastSeen = lastSeen;
+      user.save();
 
       let token;
-      console.log(remember);
 
       remember ? 
       token = jwt.sign(
@@ -98,6 +99,8 @@ router.post(
         config.get('jwtSecret'),
         {expiresIn: '10s'}
       );
+
+      
 
       res.json({token, userId: user.id, avatarColor: user.avatarColor, userLogin: user.login, individualLogin: user.individualLogin, email: user.email, message: "Success!"});
 

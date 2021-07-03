@@ -2,7 +2,6 @@ const express = require('express');
 const config = require('config');
 const mongoose = require('mongoose');
 const http = require('http');
-// const socket = require('socket.io');
 const createSocket = require('./core/socket');
 const createRoutes = require('./routes/createRoutes');
 
@@ -20,10 +19,13 @@ const mongoURL = config.get('mongoURL');
 
 app.set('socketIO', io);
 
-app.use(express.json({extended: true}));
+app.use(express.json({limit: '50mb', extended: true}));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/dialog', require('./routes/dialog.routes'));
+app.use('/api/upload', require('./routes/upload.routes'));
 
 async function start() {
 	try {

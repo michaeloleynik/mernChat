@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 
 import {io} from 'socket.io-client';
 
+import AES from 'crypto-js/aes';
+import enc_utf8 from 'crypto-js/enc-utf8';
+
 import { makeStyles } from '@material-ui/core/styles';
 import { useSelector, useDispatch } from 'react-redux';
 import Typography from '@material-ui/core/Typography';
@@ -74,11 +77,14 @@ export const SideBar = ({dialogId}) => {
   const [open, setOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dialogs, setDialogs] = useState([]);
+  // const [onlineUsers, setOnlineUsers] = useState([]);
 
   const fetchItems = useCallback(async () => {
     try {
       const data = await request('/api/dialog/getAllDialogs', 'GET', null, {Autharization: `Bearer ${userDataContent.jwtToken}`});
-      console.log(data);
+      data.forEach(d => {
+        d.lastMessage.text = AES.decrypt(d.lastMessage.text, d.secretKey).toString(enc_utf8);
+      });
 
       setDialogs(data);
     } catch (e) {}
@@ -98,18 +104,48 @@ export const SideBar = ({dialogId}) => {
     };
   }, [fetchItems]);
 
+  // useEffect(() => {
+  //   socket.on('SET_ONLINE', users => {
+  //     console.log(users);
+  //     setOnlineUsers([...onlineUsers, users[0]]);
+  //   });
+  //   return () => {
+  //     socket.removeListener('SET_ONLINE');
+  //     // socket.removeListener('NEW_MESSAGE');
+  //   };
+  // }, [onlineUsers]);
+
   useEffect(() => {
-    socket.on('NEW_MESSAGE', lastMessage => {
-      console.log(lastMessage);
-    dialogs.forEach(d => {
-      if(d.id === lastMessage.dialogId) {
-        d.lastMessage.text = lastMessage.text;
-        d.lastMessage.user = lastMessage.user;
-        d.lastMessage.createdAt = lastMessage.createdAt;
+    socket.on('NEW_MESSAGE', lastMsg => {
+      // console.log(lastMsg);
+      
+      // console.log(lastMessage.dialogId === dialogs[0].id);
+      const currentDialogIdx = dialogs.findIndex(d => d.id === lastMsg.dialogId);
+      if(currentDialogIdx !== -1) {
+        let newDialogsArr = [...dialogs];
+        newDialogsArr[currentDialogIdx] = {
+          ...dialogs[currentDialogIdx],
+          lastMessage: {...lastMsg, text: AES.decrypt(lastMsg.text, dialogs[currentDialogIdx].secretKey).toString(enc_utf8)},
+          updatedAt: lastMsg.createdAt
+        };
+        // console.log(currentDialogIdx);
+
+        setDialogs([...newDialogsArr]);
       }
-    });
-    console.log(dialogs);
-    setDialogs([...dialogs]);
+      
+    // dialogs.forEach(d => {
+    //   if(d.id === lastMessage.dialogId) {
+    //     console.log(111);
+    //     if (userDataContent.id !== lastMessage.user) {
+    //       d.partner.isOnline = true;
+    //     }
+    //     d.lastMessage.text = lastMessage.text;
+    //     d.lastMessage.user = lastMessage.user;
+    //     d.lastMessage.createdAt = lastMessage.createdAt;
+    //   }
+    // });
+    // console.log(dialogs);
+    // setDialogs([...dialogs]);
   });
     return () => {
       socket.removeListener('NEW_MESSAGE');
@@ -182,7 +218,7 @@ export const SideBar = ({dialogId}) => {
         </Drawer>
         <Link to="/settings">
           <Avatar className={classes.avatar}>
-            {userDataContent.userName.slice(0, 1).toUpperCase()}
+            {userDataContent.userName && userDataContent.userName.slice(0, 1).toUpperCase()}
           </Avatar>
         </Link>
       </Hidden>

@@ -60,7 +60,7 @@ export const SignIn = () => {
     try {
       e.preventDefault();
 
-      const data = await request('/api/auth/login', 'POST', {...loginForm, lastSeen: Date.now()});
+      const data = await request('/api/auth/login', 'POST', {...loginForm, lastSeen: new Date()});
       console.log(data);
       
       if (data.status === 400) {

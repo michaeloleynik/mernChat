@@ -14,7 +14,8 @@ import { Footer } from '../../components/Footer/Footer';
 const useStyles = makeStyles((theme) => ({
   paper: {
     backgroundColor: theme.palette.paperColor.main,
-    minHeight: '100vh'
+    minHeight: '100vh',
+    borderRadius: '10px'
   },
   root: {
     display: 'flex',
@@ -34,7 +35,7 @@ export const Chat = ({dialogId}) => {
 
 
   return (
-    <Paper elevation={2} className={classes.paper}>
+    <Paper elevation={3} className={classes.paper}>
       <Grid className={classes.root}>
         <SideBar dialogId={dialogId} />
 

@@ -1,6 +1,9 @@
 {
-    "port": 5005,
-    "jwtSecret": "PkSpUrWuZw3y6B8DbGdJfNjQmSqVsXu2x4z7C9EbHeKgNkRnTqWtYv3y5A7DaFcHf",
-    "mongoURL": "mongodb+srv://admin:admin12345@cluster0.txqts.mongodb.net/app?retryWrites=true&w=majority",
-    "baseUrl": "http://localhost:5005"
-  }
+  "port": 5005,
+  "jwtSecret": "PkSpUrWuZw3y6B8DbGdJfNjQmSqVsXu2x4z7C9EbHeKgNkRnTqWtYv3y5A7DaFcHf",
+  "mongoURL": "mongodb+srv://admin:admin12345@cluster0.txqts.mongodb.net/app?retryWrites=true&w=majority",
+  "baseUrl": "http://localhost:5005",
+  "CLOUDINARY_NAME": "dyscbbp1t",
+  "CLOUDINARY_API_KEY": "758412387187842",
+  "CLOUDINARY_API_SECRET": "S1cVzeN3ErXN2T4Nn_m5YscSs00"
+}

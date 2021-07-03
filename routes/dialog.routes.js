@@ -4,8 +4,11 @@ const socket = require('socket.io');
 
 const Dialog = require('../models/Dialog');
 const User = require('../models/User');
-const auth = require('../middleware/auth.middleware');
 const Message = require('../models/Message');
+
+const auth = require('../middleware/auth.middleware');
+
+const crypto = require('crypto-js'); 
 
 const router = Router();
 
@@ -14,10 +17,12 @@ router.post(
   async (req, res) => {
     try {
       const {partnerLogin, currentMessage, authorId} = req.body;
-      // console.log(req.body);
+      // console.log(typeof currentMessage);
 
       const io = req.app.get('socketIO');
 
+      await User.findOneAndUpdate({_id: authorId}, {lastSeen: new Date()});
+      
       const data = await User.findOne({individualLogin: `@${partnerLogin}`});
       const partnerId = data._id;
 
@@ -27,9 +32,14 @@ router.post(
         return res.status(400).json({message: "Current Dialog is already exists!", status: 400});
       }
 
-      const dialog = new Dialog({author: authorId, partner: partnerId});
+      const secretKey = crypto.SHA256(`${authorId}${partnerId}${(Math.random()) * 10000}`);
+      // const secureMessage = crypto.AES.encrypt(currentMessage, secretKey).toString();
+      // console.log(secretKey.toString());
 
-      dialog.save().then(dialogObj => {
+      const dialog = new Dialog({author: authorId, partner: partnerId, secretKey});
+      // const secureMessage = crypto.AES.encrypt(currentMessage, secretKey.toString()).toString();
+      
+      dialog.save().then(dialogObj => {        
         const message = new Message({text: currentMessage, dialog: dialogObj._id, user: authorId});
         message.save().then(() => {
           dialogObj.lastMessage = message._id;
@@ -49,18 +59,18 @@ router.post(
   '/addMessage',
   async (req, res) => {
     try {
-      const {messageText, dialogId, user} = req.body;
-      const io = req.app.get('socketIO');
+      // const {messageText, dialogId, user} = req.body;
+      // const io = req.app.get('socketIO');
 
-      const message = new Message({text: messageText, dialog: dialogId, user});
+      // const message = new Message({text: messageText, dialog: dialogId, user});
 
-      io.emit("SERVER:NEW_MESSAGE", message);
+      // io.emit("NEW_MESSAGE", message);
 
-      await message.save();
+      // await message.save();
 
-      await Dialog.findByIdAndUpdate(dialogId, {lastMessage: message._id}, {upsert: true});
+      // await Dialog.findByIdAndUpdate(dialogId, {lastMessage: message._id}, {upsert: true});
 
-      res.status(201).json(message);
+      // res.status(201).json({message: "Success!", status: 201});
 
       
     } catch (e) {
@@ -97,7 +107,6 @@ router.get(
   async (req, res) => {
     try {
       const {userId} = req.user;
-      let finalRes = [];
 
       await Dialog.find({ 
         $or: [
@@ -114,15 +123,15 @@ router.get(
 
           if (authorId === userId) {
             const founded = await User.findOne({_id: partnerId});
-            console.log(founded);
+            // console.log(founded);
 
-            return {id: i._id, author: i.author, partner: founded, lastMessage, updatedAt: i.updatedAt}
+            return {id: i._id, author: i.author, partner: founded, secretKey: i.secretKey,  lastMessage, updatedAt: i.updatedAt}
 
           } else if (partnerId === userId) {
             const founded = await User.findOne({_id: authorId})
-            console.log(founded);
+            // console.log(founded);
 
-            return {id: i._id, author: i.author, partner: founded, lastMessage, updatedAt: i.updatedAt}
+            return {id: i._id, author: i.author, partner: founded, secretKey: i.secretKey, lastMessage, updatedAt: i.updatedAt}
           }
         })
         Promise.all(f).then(resp => {
@@ -140,9 +149,12 @@ router.get(
   async (req, res) => {
     try {
       const dialogId = req.query.query;
+      // const page = req.query.page ? parseInt(req.query.page) : 0;
+      // console.log(page);
 
+      // const data = await Message.find({dialog: dialogId}).sort({createdAt: 'desc'}).skip((page - 1) * 20).limit(20);
+      // console.log(!!data);
       const data = await Message.find({dialog: dialogId});
-
       res.status(201).json(data);
     } catch (e) {
       res.status(500).json({message: "Something went wrong...", status: 500});   

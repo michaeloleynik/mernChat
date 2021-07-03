@@ -14,6 +14,7 @@ export const dialogReducer = (state = initState, action) => {
       }
 
     case 'message/addMessage': 
+      console.log(action.payload);
       return {
         ...state,
         currentDialogMessages: { ...state.currentDialogMessages, ...action.payload },

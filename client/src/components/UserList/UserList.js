@@ -6,7 +6,10 @@ import orderBy from "lodash/orderBy";
 
 import {io} from 'socket.io-client';
 
-import { makeStyles, fade } from '@material-ui/core/styles';
+import AES from 'crypto-js/aes';
+import enc_utf8 from 'crypto-js/enc-utf8';
+
+import { makeStyles, fade, withStyles } from '@material-ui/core/styles';
 import InputBase from '@material-ui/core/InputBase';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -16,12 +19,20 @@ import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
 import SearchIcon from '@material-ui/icons/Search';
+import Badge from '@material-ui/core/Badge';
 
 import sadDarkSvg from '../../assets/images/sadDark.svg';
 import sadLightSvg from '../../assets/images/sadLight.svg';
 import { Loader } from '../Loader/Loader';
 
 const socket = io();
+
+const StyledBadge = withStyles((theme) => ({
+  badge: {
+    backgroundColor: '#44b700',
+    color: '#44b700',
+  }
+}))(Badge);
 
 
 const useStyles = makeStyles((theme) => ({
@@ -106,15 +117,33 @@ const useStyles = makeStyles((theme) => ({
 
   'listItem--selected': {
     backgroundColor: fade(theme.palette.defaultColor.main, 0.4)
+  },
+  badgeOnlineColor: {
+    color: "#00c853"
   }
 }));
 
 export const UserList = ({dialogs, whatTheme, loading, myId, selectedDialogId}) => {
   const classes = useStyles();
   const dispatch = useDispatch();
+
   const [inputValue, setInputValue] = useState('');
   const [filtredDialogs, setFiltredDialogs] = useState([]);
   // console.log(selectedDialogId);
+
+  // useEffect(() => {
+  //   let newDialogsArr = [];
+  //   dialogs.forEach(d => {
+  //     newDialogsArr[dialogs.indexOf(d)] = {
+  //       ...d,
+  //       lastMessage: {
+  //         ...d.lastMessage,
+  //         text: AES.decrypt(d.lastMessage.text, d.secretKey).toString(enc_utf8)
+  //       }
+  //     }
+  //   });
+  //   setFiltredDialogs([...newDialogsArr]);
+  // }, [dialogs]);
 
   const onChangeInput = e => {
     setFiltredDialogs(
@@ -129,9 +158,10 @@ export const UserList = ({dialogs, whatTheme, loading, myId, selectedDialogId}) 
     return myId === userId;
   }
 
-  const setCurrentDialog = (id, partnerName, avatarColor, lastSeen) => {
+  const setCurrentDialog = (id, partnerName, avatarColor, isOnline, secretKey) => {
+    console.log(secretKey);
     dispatch({type: 'dialog/currentDialogId', payload: id});
-    dispatch({type: 'dialog/currentDialogData', payload: {partnerName, avatarColor, lastSeen}});
+    dispatch({type: 'dialog/currentDialogData', payload: {partnerName, avatarColor, isOnline, secretKey}});
   }
 
   const getMessageTime = createdAt => {
@@ -143,7 +173,9 @@ export const UserList = ({dialogs, whatTheme, loading, myId, selectedDialogId}) 
   };
 
   useEffect(() => {
-    setFiltredDialogs([...dialogs]);
+    if (dialogs) {
+      setFiltredDialogs([...dialogs]);
+    }
   }, [dialogs]);
   // const selectedDialogId = '606de52bab0b9f26980bb93e';
   return (
@@ -174,14 +206,25 @@ export const UserList = ({dialogs, whatTheme, loading, myId, selectedDialogId}) 
             <React.Fragment key={dialog.id}>
               <Link onClick={() => {
                   socket.emit('DIALOGS:JOIN', {dialogId: dialog.id});
-                  setCurrentDialog(dialog.id, dialog.partner.login, dialog.partner.avatarColor, dialog.lastSeen)
+                  setCurrentDialog(dialog.id, dialog.partner.login, dialog.partner.avatarColor, dialog.partner.isOnline, dialog.secretKey)
                 }} 
                 to={`/dialogs/${dialog.id}`}>
                 <ListItem className={dialog.id === selectedDialogId ? classes['listItem--selected'] : classes.listItem} alignItems="flex-start">
-                  <ListItemAvatar>
-                    <Avatar style={{backgroundColor: `${dialog.partner.avatarColor}`}}>
-                      {dialog.partner.login.toUpperCase().slice(0, 1)}
-                    </Avatar>
+                  <ListItemAvatar>                       
+                    <StyledBadge
+                      overlap="circle"
+                      anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                      }}
+                      variant="dot"
+                      className={classes.badgeOnlineColor}
+                      invisible={!dialog.partner.isOnline}
+                    >
+                      <Avatar style={{backgroundColor: `${dialog.partner.avatarColor}`}}>
+                        {dialog.partner.login.toUpperCase().slice(0, 1)}
+                      </Avatar>
+                    </StyledBadge>                     
                   </ListItemAvatar>
 
                   <ListItemText

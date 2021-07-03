@@ -7,12 +7,11 @@ import { makeStyles } from '@material-ui/core/styles';
 // const dialogData = state => state.dialog.currentDialogData;
 // const userData = state => state.auth.userData;
 
-const isOnline = false;
-const statusColor = isOnline ? green['A700'] : red['A700'];
+// const isOnline = false;
 
 // console.log(statusColor);
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   root: {
     display: 'flex',
     flexDirection: 'column',
@@ -27,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
     position: 'relative',
     
     '&::before': {
-      backgroundColor: statusColor,
+      backgroundColor: props => props.backgroundColor,
       position: 'absolute',
       top: '8px',
       left: '-11px',
@@ -39,8 +38,12 @@ const useStyles = makeStyles((theme) => ({
   }, 
 }));
 
-export const Status = ({dialogId, partnerName, userName}) => {
-  const classes = useStyles();
+export const Status = ({dialogId, partnerName, userName, isOnline}) => {
+  if (!dialogId) isOnline = true;
+  const statusColor = isOnline ? green['A700'] : red['A700'];
+  const props = {backgroundColor: statusColor}
+  // console.log(statusColor);
+  const classes = useStyles(props);
   
   return (
     <div className={classes.root}>

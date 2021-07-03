@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
+import { useHttp } from '../../hooks/useHttp';
 
 import {io} from 'socket.io-client';
+
+import AES from 'crypto-js/aes';
 
 import 'emoji-mart/css/emoji-mart.css';
 import { Picker } from 'emoji-mart';
@@ -16,7 +19,8 @@ import { Status } from '../../components/Status/Status';
 import Divider from '@material-ui/core/Divider';
 import { Messages } from '../Messages/Messages';
 import { ClickAwayListener, Typography } from '@material-ui/core';
-
+import Dropzone from 'react-dropzone';
+ 
 const dark = state => state.theme.dark;
 const dialogData = state => state.dialog.currentDialogData;
 const userData = state => state.auth.userData;
@@ -95,39 +99,55 @@ const useStyles = makeStyles((theme) => ({
 
   attachmentIcon: {
     right: '55px'
+  },
+
+  dialogAttachment: {
+    '& .MuiDialogContent': {
+      overflow: 'hidden'
+    }
+    // overflow: 'hidden'
   }
 }));
 export const Dialog = ({ dialogId, addMessage }) => {
   const classes = useStyles();
+  const { request } = useHttp();
   const [showEmoji, setShowEmoji] = useState(false);
   const [value, setValue] = useState('');
+  const [isAttachOpen, setIsAttachOpen] = useState(false);
 
   const whatTheme = useSelector(dark);
-  const {partnerName} = useSelector(dialogData);
+  const {partnerName, isOnline, secretKey} = useSelector(dialogData);
   const {userName, id} = useSelector(userData);
 
   const addEmoji = ({ native }) => {
     setValue((`${value}${native}`).trim());
   }
 
-  const sendMessage = () => {
-    // const data = await request('/api/dialog/addMessage', 'POST', { messageText: value, dialogId, user: id });
-    // console.log(data.message);
-    addMessage({ text: value, dialogId, user: id });
-    socket.emit('NEW_MESSAGE', { text: value, dialogId, user: id });
-    setValue('');
+  const addFiles = (file) => {
+    const selectedFile = file[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(selectedFile);
+    reader.onloadend = async () => {
+      const data = await request('/api/upload/uploadFile', 'POST', {userId: id, file: reader.result});
+      socket.emit('NEW_MESSAGE', { text: value, dialogId, user: id, attachments: [data.image] });
+    }
   }
 
-  // useEffect(() => {
-  //   if (value) {
-  //     socket.emit('DIALOGS:TYPING', {dialogId, userId: id});
-  //   }
-  // }, [dialogId, id, value]);
+  const sendMessage = async () => {
+    const secureValue = AES.encrypt(value, secretKey).toString();
+    addMessage({ text: secureValue, dialogId, user: id });
+    // console.log(secureValue);
+    
+    socket.emit('NEW_MESSAGE', { text: secureValue, dialogId, user: id });
+
+    setValue('');
+    
+  }
 
   return (
     <Grid container direction="column" justify="space-between">
       <div>
-        <Status dialogId={dialogId} partnerName={partnerName} userName={userName} />
+        <Status dialogId={dialogId} partnerName={partnerName} userName={userName} isOnline={isOnline} />
         <Divider />
       </div>
       {
@@ -143,7 +163,7 @@ export const Dialog = ({ dialogId, addMessage }) => {
                 placeholder="Put your message..."
                 value={value}
                 onKeyUp={e => {
-                  socket.emit('DIALOGS:TYPING', {dialogId, userId: id});
+                  socket.emit('DIALOGS:TYPING', {currentDialogId: dialogId, userId: id});
                   if(e.code === 'Enter' && value !== '') {
                     sendMessage();
                   }
@@ -174,9 +194,21 @@ export const Dialog = ({ dialogId, addMessage }) => {
                 <SendIcon />
               </IconButton>
               
-              <IconButton className={`${classes.icon} ${classes.attachmentIcon}`}>
+              <IconButton className={`${classes.icon} ${classes.attachmentIcon}`} onClick={() => setIsAttachOpen(!isAttachOpen)}>
                 <AttachFileIcon />
               </IconButton>
+              <Dropzone onDrop={files => addFiles(files)}>
+                {({getRootProps, getInputProps}) => (
+                  <section>
+                    <div {...getRootProps()}>
+                      <input {...getInputProps()} />
+                      <IconButton className={`${classes.icon} ${classes.attachmentIcon}`} onClick={() => setIsAttachOpen(!isAttachOpen)}>
+                        <AttachFileIcon />
+                      </IconButton>
+                    </div>
+                  </section>
+                )}
+              </Dropzone>
             </div>
           </div>   
         </> :

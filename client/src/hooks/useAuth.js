@@ -19,7 +19,7 @@ export const useAuth = () => {
       userEmail,
       userName
     }});
-    // socket.emit('SET_ONLINE', {userId: id});
+    socket.emit('SET_ONLINE', {userId: id});
     dispatch({type: 'auth/isAuth', payload: true});
     
     // dispatch({type: 'auth/token', payload: jwtToken});

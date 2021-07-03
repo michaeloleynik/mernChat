@@ -4,7 +4,9 @@ const schema = new Schema(
   {
     partner: { type: Schema.Types.ObjectId, ref: "User" },
     author: { type: Schema.Types.ObjectId, ref: "User" },
-    lastMessage: { type: Schema.Types.ObjectId, ref: "Message" },
+    secretKey: { type: String, required: true },
+    lastMessage: { type: Schema.Types.ObjectId, ref: "Message" }
+    
   },
   {
     timestamps: true

@@ -7,14 +7,6 @@ const dialogData = state => state.dialog.currentDialogData;
 const userData = state => state.auth.userData;
 
 const useStyles = makeStyles(theme => ({
-  // hyphenate: {
-  //   overflowWrap: 'break-word',
-  //   wordWrap: 'break-word',
-  //   '-webkit-hyphens': 'auto',
-  //   '-ms-hyphens': 'auto',
-  //   '-moz-hyphens': 'auto',
-  //   hyphens: 'auto',
-  // },
   message: {
     width: '100%',
     display: 'flex',
@@ -64,14 +56,24 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: theme.palette.primary.main,
     order: 2,
     wordBreak: 'break-all',
-  }
+  },
+  imageMessage: {
+    width: '240px',
+    height: 'auto',
+    [theme.breakpoints.down('xs')]: {
+      width: '148px',
+      height: 'auto',
+    },
+  } 
 }));
 
-export const Message = ({isMe, text}) => {
+export const Message = ({isMe, text, attachments}) => {
   const classes = useStyles();
 
   const {partnerName} = useSelector(dialogData);
   const {userName} = useSelector(userData);
+
+  // const file = attachments[0];
   return (
     <div className={isMe ? classes['message--isMe'] : classes['message']}>
       <Avatar className={isMe ? classes['avatar--isMe'] : classes['avatar']}> 
@@ -80,7 +82,7 @@ export const Message = ({isMe, text}) => {
 
       <div className={classes['bubbleContainer']}>
         <div className={isMe ? classes['bubble--isMe'] : classes['bubble']}>
-          {text}
+          {!attachments.length ? text : <img className={classes.imageMessage} src={attachments[0]} alt="attachment" />}
         </div>
       </div>
     </div>
